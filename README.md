@@ -37,7 +37,7 @@ node ws.js
 - **User** — 普通注册用户，可执行 `user` 和 `normal` 级别命令
 - **OP** — 管理员，可执行所有命令
 
-层级顺序：`Blocker > User > OP > Normal`
+权限大小排序：`OP > User > Normal > Blocker`
 
 ## Mod 机制
 
@@ -47,7 +47,7 @@ node ws.js
 
 ```js
 mods: {
-  client: { myMod: "./mod/myMod.js" },
+  client: { myMod: "../mod/myMod.js" },
   server: {}
 }
 ```
@@ -61,7 +61,7 @@ mods: {
 ```js
 mods: {
   client: {},
-  server: { myMod: "./mod/myMod.js" }
+  server: { myMod: "../mod/myMod.js" }
 }
 ```
 
@@ -70,7 +70,7 @@ mods: {
 `Command` 类提供链式构建：
 
 ```js
-const { Command } = require("./lib/command");
+const { Command } = require("../lib/command");
 
 const greet = new Command("greet")
   .addString("target", false)
