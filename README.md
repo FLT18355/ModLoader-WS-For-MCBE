@@ -16,7 +16,11 @@ npm install ws uuid
 node ws.js
 ```
 
-服务器启动后监听 19132 端口，MCBE 客户端通过「外部服务器」连接该地址即可。
+服务器启动后监听 19132 端口，MCBE 客户端在本地世界可通过如下命令连接。
+
+```
+/connect 127.0.0.1:19132
+```
 
 ## 配置
 
@@ -52,7 +56,7 @@ mods: {
 }
 ```
 
-导出对象需包含 `name`、`commands`（`Command` 实例数组）、`onLoad(utils)` 方法。
+导出对象需包含 构造函数、`commands` 方法（返回 `Command` 实例数组）、`destroy` 方法。
 
 ### 服务端 Mod
 
@@ -65,6 +69,8 @@ mods: {
 }
 ```
 
+导出对象需包含 `start` 静态方法与 `destroy` 静态方法。
+
 ### Command API
 
 `Command` 类提供链式构建：
@@ -73,9 +79,9 @@ mods: {
 const { Command } = require("../lib/command");
 
 const greet = new Command("greet")
-  .addString("target", false)
-  .setFunc((utils, args) => {
-    utils.tell(`你好, ${args.target || "world"}!`);
+  .addString("target")
+  .setFunc((commander, target) => {
+    utils.tell(`你好, ${target || "世界"}!`, commander);
   });
 ```
 
@@ -87,8 +93,8 @@ const greet = new Command("greet")
 
 | 方法 | 说明 |
 |---|---|
-| `runCommand(command)` | 在客户端执行指令 |
-| `subscribe(event, callback)` | 订阅游戏事件 |
+| `runCommand(command, callback?)` | 在客户端执行指令 |
+| `subscribe(event, callback?)` | 订阅游戏事件 |
 | `unsubscribe(event)` | 取消订阅 |
 | `tell(msg, target?)` | 发送 `tellraw` 消息 |
 | `tellAll(msg)` | 广播 `/me` 消息 |
@@ -110,3 +116,6 @@ ModLoader-WS-For-MCBE/
 │   └── utils.js       WebSocket 工具类（协议封装）
 └── mod/               Mod 存放目录
 ```
+
+##备注
+- 该 README.md 文档由** AI **辅助生成
