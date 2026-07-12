@@ -9,12 +9,12 @@ const mods = {
 	client: { 
     mcfunc: "../mod/mcfunc.js",
     music: "../mod/music.js",
-    cmd: "../mod/cmd.js"
+    cmd: "../mod/cmd.js",
+    permission: "../mod/permission.js"
   },
 	server: {}
 };
 
-// 函数目录(自行修改)
 const basePath = {
 	mcfunc: "../Function/"
 };
