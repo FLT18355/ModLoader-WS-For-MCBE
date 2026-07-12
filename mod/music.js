@@ -1,0 +1,349 @@
+const fs = require("fs");
+const path = require("path");
+const Command = require("../lib/command");
+
+const VERSION = "NodeJS-1.0";
+// 音乐目录(填写你放音乐的地方)
+const MUSIC_PATH = path.join(__dirname, "../../Music.js/");
+const OP_FILE = path.join(__dirname, "music_op.json");
+
+class MusicPlayer {
+	constructor(client) {
+		this.client = client;
+		this.musicRunning = false;
+		this.musicPrepareName = null;
+		this.musicPrepareList = null;
+		this.singleLoop = false;
+		this.randomLoop = false;
+		this.musicOp = [];
+		this.loadOp();
+	}
+
+	loadOp() {
+		try {
+			if (fs.existsSync(OP_FILE)) {
+				const data = JSON.parse(fs.readFileSync(OP_FILE, "utf-8"));
+				this.musicOp = data.map(entry => entry.name).filter(Boolean);
+			}
+		} catch {
+			this.musicOp = [];
+		}
+	}
+
+	isOp(playerName) {
+		return this.musicOp.includes(playerName) || playerName === "StarAwA10001";
+	}
+
+	async musicLoad(musicFile) {
+		try {
+			const content = await fs.promises.readFile(musicFile, "utf-8");
+			const musicConfig = JSON.parse(content);
+			this.musicPrepareName = musicConfig.title;
+			this.musicPrepareList = musicConfig.tracks;
+			return true;
+		} catch (e) {
+			console.log("音乐加载失败:", e.message);
+			return false;
+		}
+	}
+
+	async musicRun(musicName, musicList) {
+		if (!musicName || !musicList) {
+			this.client.tellAll("§c音乐列表为空");
+			return;
+		}
+
+		if (this.musicRunning) {
+			this.client.tellAll("§c已有音乐播放中");
+			return;
+		}
+
+		console.log(`正在播放: ${musicName}`);
+		this.client.tellAll(`§e正在播放 §b${musicName}`);
+		this.musicRunning = true;
+
+		const startTime = Date.now();
+
+		for (const [musicTime, musicTimbre, musicPitch, musicVolume] of musicList) {
+			if (!this.musicRunning) {
+				this.client.tellAll("§c音乐播放已停止");
+				return;
+			}
+
+			const waitTime = musicTime * 1000 - (Date.now() - startTime);
+			if (waitTime > 0) {
+				await new Promise(resolve => setTimeout(resolve, waitTime));
+			}
+
+			try {
+				this.client.runCommand(
+					`/execute as @a at @s run playsound ${musicTimbre} @s ~ ~ ~ ${musicPitch} ${musicVolume}`
+				);
+			} catch (e) {
+				console.log("播放出错:", e.message);
+				this.client.tellAll("§c播放出错，音乐进程已关闭");
+				this.musicRunning = false;
+				return;
+			}
+		}
+
+		console.log(`${musicName} 播放完毕`);
+		this.client.tellAll(`§e${musicName} §a已播放完毕`);
+		this.musicRunning = false;
+
+		if (this.singleLoop && !this.musicRunning) {
+			console.log(`单曲循环: ${musicName}`);
+			this.client.tellAll(`§d单曲循环 > §e${musicName} §f重新播放`);
+			this.musicRun(musicName, musicList);
+		}
+	}
+
+	async musicFastRun(musicName) {
+		const filePath = path.join(MUSIC_PATH, musicName + ".json");
+		console.log("加载文件:", filePath);
+
+		if (await this.musicLoad(filePath)) {
+			console.log("音乐文件加载成功");
+			this.client.tellAll("§a音乐文件加载成功");
+		} else {
+			console.log("音乐文件加载失败");
+			this.client.tellAll("§c音乐文件加载失败");
+			return;
+		}
+
+		if (this.musicRunning) {
+			this.client.tellAll("§c已有音乐播放中");
+			return;
+		}
+
+		this.musicRun(this.musicPrepareName, this.musicPrepareList);
+	}
+
+	musicSearch(keyword) {
+		const results = [];
+		const lowerKeyword = keyword.toLowerCase();
+
+		try {
+			const files = fs.readdirSync(MUSIC_PATH).filter(f => f.endsWith(".json"));
+
+			for (const f of files) {
+				const name = f.slice(0, -5);
+				if (name.toLowerCase().includes(lowerKeyword)) {
+					results.push(name);
+					continue;
+				}
+				try {
+					const data = JSON.parse(fs.readFileSync(path.join(MUSIC_PATH, f), "utf-8"));
+					if (data.title && data.title.toLowerCase().includes(lowerKeyword)) {
+						results.push(data.title);
+					}
+				} catch {}
+			}
+		} catch {}
+
+		return results;
+	}
+
+	randomLoopPlay() {
+		this.client.tellAll("§a已开启循环随机播放模式");
+
+		const playNext = () => {
+			if (!this.randomLoop) {
+				this.client.tellAll("§a循环随机播放已停止");
+				return;
+			}
+
+			try {
+				const files = fs.readdirSync(MUSIC_PATH).filter(f => f.endsWith(".json"));
+				if (!files.length) {
+					this.client.tellAll("§c没有找到任何音乐文件");
+					this.randomLoop = false;
+					return;
+				}
+
+				const randomFile = files[Math.floor(Math.random() * files.length)];
+				const musicName = randomFile.slice(0, -5);
+
+				this.musicLoad(path.join(MUSIC_PATH, randomFile)).then(success => {
+					if (!success) {
+						this.client.tellAll(`§c加载音乐文件失败: ${randomFile}`);
+						setTimeout(playNext, 2000);
+						return;
+					}
+
+					if (this.musicRunning) {
+						const waitPlay = () => {
+							if (this.musicRunning && this.randomLoop) {
+								setTimeout(waitPlay, 1000);
+							} else if (this.randomLoop) {
+								this.musicRun(this.musicPrepareName, this.musicPrepareList).then(() => {
+									playNext();
+								});
+							}
+						};
+						waitPlay();
+					} else {
+						this.musicRun(this.musicPrepareName, this.musicPrepareList).then(() => {
+							playNext();
+						});
+					}
+				});
+			} catch {
+				this.client.tellAll("§c读取音乐目录失败");
+				this.randomLoop = false;
+			}
+		};
+
+		playNext();
+	}
+
+	commands() {
+		return {
+			op: [
+				Command.create("m:play", "播放指定音乐")
+					.addString("音乐名")
+					.setFunc((player, name) => {
+						if (!this.isOp(player)) {
+							this.client.tell(player, "§c你没有权限使用此命令");
+							return;
+						}
+						console.log(`${player} 请求播放: ${name}`);
+						if (this.randomLoop) {
+							this.randomLoop = false;
+						}
+						this.musicFastRun(name);
+					}),
+
+				Command.create("m:stop", "停止音乐播放")
+					.setFunc((player) => {
+						if (!this.isOp(player)) {
+							this.client.tell(player, "§c你没有权限使用此命令");
+							return;
+						}
+						console.log(`${player} 请求停止播放`);
+						if (this.musicRunning) {
+							this.musicRunning = false;
+							this.client.tellAll("§e音乐播放已停止");
+						} else {
+							this.client.tellAll("§c当前没有播放中的音乐");
+						}
+						this.singleLoop = false;
+						this.randomLoop = false;
+					}),
+
+				Command.create("m:random", "随机播放一首音乐")
+					.setFunc((player) => {
+						if (!this.isOp(player)) {
+							this.client.tell(player, "§c你没有权限使用此命令");
+							return;
+						}
+						console.log(`${player} 请求随机播放`);
+						try {
+							const files = fs.readdirSync(MUSIC_PATH).filter(f => f.endsWith(".json"));
+							if (files.length) {
+								const randomFile = files[Math.floor(Math.random() * files.length)];
+								this.musicFastRun(randomFile.slice(0, -5));
+							} else {
+								this.client.tellAll("§c没有找到任何音乐文件");
+							}
+						} catch {
+							this.client.tellAll("§c读取音乐目录失败");
+						}
+					}),
+
+				Command.create("m:loop", "开关单曲循环")
+					.setFunc((player) => {
+						if (!this.isOp(player)) {
+							this.client.tell(player, "§c你没有权限使用此命令");
+							return;
+						}
+						this.singleLoop = !this.singleLoop;
+						if (this.singleLoop) {
+							this.randomLoop = false;
+							this.client.tellAll("§a已开启单曲循环");
+						} else {
+							this.client.tellAll("§e已关闭单曲循环");
+						}
+					}),
+
+				Command.create("m:randloop", "开启循环随机播放")
+					.setFunc((player) => {
+						if (!this.isOp(player)) {
+							this.client.tell(player, "§c你没有权限使用此命令");
+							return;
+						}
+						this.singleLoop = false;
+						if (this.randomLoop) {
+							this.client.tellAll("§e循环随机播放已在运行中");
+							return;
+						}
+						try {
+							const files = fs.readdirSync(MUSIC_PATH).filter(f => f.endsWith(".json"));
+							if (!files.length) {
+								this.client.tellAll("§c没有找到任何音乐文件");
+								return;
+							}
+							this.randomLoop = true;
+							this.randomLoopPlay();
+						} catch {
+							this.client.tellAll("§c读取音乐目录失败");
+						}
+					}),
+
+				Command.create("m:stoploop", "停止所有循环播放")
+					.setFunc((player) => {
+						if (!this.isOp(player)) {
+							this.client.tell(player, "§c你没有权限使用此命令");
+							return;
+						}
+						if (!this.randomLoop && !this.singleLoop) {
+							this.client.tellAll("§e当前没有任何循环播放模式在运行");
+							return;
+						}
+						this.singleLoop = false;
+						this.randomLoop = false;
+						if (this.musicRunning) {
+							this.musicRunning = false;
+						}
+						this.client.tellAll("§a已停止所有循环");
+					}),
+
+				Command.create("m:search", "搜索音乐")
+					.addString("关键词")
+					.setFunc((player, keyword) => {
+						if (!this.isOp(player)) {
+							this.client.tell(player, "§c你没有权限使用此命令");
+							return;
+						}
+						const results = this.musicSearch(keyword);
+						if (results.length) {
+							let resultText = results.slice(0, 10).join(", ");
+							if (results.length > 10) {
+								resultText += ` ...共${results.length}首`;
+							}
+							this.client.tellAll(`§b搜索 §e${keyword} §f结果: §a${resultText}`);
+						} else {
+							this.client.tellAll(`§e搜索 §e${keyword} §f没有找到结果`);
+						}
+					}),
+
+				Command.create("m:version", "显示版本信息")
+					.setFunc((player) => {
+						this.client.tellAll(`§bMusic §f${VERSION}`);
+						this.client.tellAll("§7使用NodeJS编程语言编写");
+						this.client.tellAll("§7StarAwA为原始脚本创始人");
+						this.client.tellAll("§7后由FLT18355使用opencode进行续写");
+					})
+			]
+		};
+	}
+
+	destroy() {
+		this.musicRunning = false;
+		this.singleLoop = false;
+		this.randomLoop = false;
+		this.client = null;
+	}
+}
+
+module.exports = MusicPlayer;

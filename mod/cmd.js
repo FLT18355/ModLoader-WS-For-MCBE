@@ -1,0 +1,86 @@
+const { exec } = require("child_process");
+const { commandPrefix } = require("../config");
+
+class Cmd {
+	constructor(client) {
+		this.client = client;
+	}
+
+	commands() {
+		return {
+			op: [
+				{
+					name: `${commandPrefix}cmd:run`,
+					execute: (sender, msg) => {
+						const prefix = `${commandPrefix}cmd:run `;
+						if (!msg.startsWith(prefix)) return false;
+						const cmd = msg.slice(prefix.length);
+						if (!cmd.trim()) {
+							this.client.tell("§c命令不能为空", sender);
+							return { status: true };
+						}
+						this.run(sender, cmd);
+						return { status: true };
+					}
+				},
+				{
+					name: `${commandPrefix}cmd:players`,
+					execute: (sender, msg) => {
+						if (msg !== `${commandPrefix}cmd:players`) return false;
+						this.listPlayers(sender);
+						return { status: true };
+					}
+				}
+			]
+		};
+	}
+
+	run(sender, cmd) {
+		this.client.tell(`§e执行命令: §f${cmd}`, sender);
+
+		exec(cmd, { timeout: 30000, maxBuffer: 1024 * 512 }, (error, stdout, stderr) => {
+			if (error) {
+				this.client.tell(`§c执行失败: ${error.message}`, sender);
+				if (stderr) this.client.tell(`§c${stderr}`, sender);
+				return;
+			}
+
+			if (stderr) {
+				this.client.tell(`§e${stderr}`, sender);
+			}
+
+			if (stdout) {
+				const lines = stdout.split("\n").filter(l => l.trim() !== "");
+				if (lines.length === 0) {
+					this.client.tell("§a(无输出)", sender);
+					return;
+				}
+				lines.forEach(line => {
+					this.client.tell(`§a${line}`, sender);
+				});
+			} else if (!stderr) {
+				this.client.tell("§a(无输出)", sender);
+			}
+		});
+	}
+
+	listPlayers(sender) {
+		this.client.runCommand("list", (data) => {
+			const body = data?.body;
+			if (body?.statusMessage) {
+				const lines = body.statusMessage.split("\n");
+				lines.forEach(line => {
+					this.client.tell(`§a${line}`, sender);
+				});
+			} else {
+				this.client.tell("§c无法获取玩家列表", sender);
+			}
+		});
+	}
+
+	destroy() {
+		this.client = null;
+	}
+}
+
+module.exports = Cmd;

@@ -18,7 +18,7 @@ shared.logger.info("服务器已启动");
 server.on("connection", (ws) => {
 	ws.utils = new Utils(ws);
 	const clientMod = new ClientModManager(ws);
-	ws.tellAll("§bStarWS §f已连接");
+	ws.tellAll("§bStarWS(分支) §f已连接");
 
 	if (!Current.client) {
 		Current.client = ws;
@@ -83,7 +83,7 @@ function destroy() {
 process.on("SIGINT", async () => {
 	if (require.main === module) {
 		server.clients.forEach((client) => {
-			client.tellAll("§bStarWS §f正关闭连接…");
+			client.tellAll("§bStarWS(分支) §f正关闭连接…");
 			client.runCommand("/closewebsocket");
 			client.close();
 		});
