@@ -99,24 +99,6 @@ const greet = new Command("greet")
 | `tell(msg, target?)` | 发送 `tellraw` 消息 |
 | `tellAll(msg)` | 广播 `/me` 消息 |
 
-## 项目结构
-
-```
-ModLoader-WS-For-MCBE/
-├── ws.js              入口，WebSocket 服务与连接处理
-├── config.js          运行时配置
-├── permission.json    权限数据
-├── lib/
-│   ├── command.js     命令定义与参数解析
-│   ├── current.js     全局连接状态单例
-│   ├── logger.js      日志（控制台 + 文件）
-│   ├── mods.js        Mod 管理器
-│   ├── permission.js  权限读写与查询
-│   ├── shared.js      共享日志实例
-│   └── utils.js       WebSocket 工具类（协议封装）
-└── mod/               Mod 存放目录
-```
-
 ## 备注
-- 该 README.md 文档由** AI **辅助生成
+- 该 README.md 文档由 **AI** 辅助生成
 - 本仓库是一个分支
