@@ -117,5 +117,6 @@ ModLoader-WS-For-MCBE/
 └── mod/               Mod 存放目录
 ```
 
-##备注
+## 备注
 - 该 README.md 文档由** AI **辅助生成
+- 本仓库是一个分支
