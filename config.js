@@ -10,7 +10,9 @@ const mods = {
     mcfunc: "../mod/mcfunc.js",
     music: "../mod/music.js",
     cmd: "../mod/cmd.js",
-    permission: "../mod/permission.js"
+    permission: "../mod/permission.js",
+    read: "../mod/read.js"
+    // morews: "../mod/morews.js"
   },
 	server: {}
 };
