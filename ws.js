@@ -19,6 +19,8 @@ server.on("connection", (ws) => {
 	ws.utils = new Utils(ws);
 	const clientMod = new ClientModManager(ws);
 	ws.tellAll("§bStarWS(分支) §f已连接");
+	ws.tellAll("§bFLT18355/ModLoader-WS-For-MCBE §f项目GitHub仓库");
+	ws.tellAll("§bStarAwA117/ModLoader-WS-For-MCBE §f源项目GitHub仓库");
 
 	if (!Current.client) {
 		Current.client = ws;
