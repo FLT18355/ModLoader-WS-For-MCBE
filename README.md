@@ -229,7 +229,7 @@ await PermissionManager.remove("op", "Notch");
 | `set(newPer)` | `object` | `Promise<true \| Error>` | 写入完整权限配置 |
 | `add(object, value)` | `string, string` | `Promise<true \| Error>` | 向指定权限组添加成员，已存在则直接返回 `true` |
 | `remove(object, value)` | `string, string` | `Promise<true \| Error>` | 从指定权限组移除成员 |
-| `query(queried)` | `string` | `Promise<string \| Error>` | 查询成员权限等级，按 Blocker > User > OP 优先级匹配 |
+| `query(queried)` | `string` | `Promise<string \| Error>` | 查询成员权限等级，按 OP > Blocker > User > Normal 优先级匹配 |
 
 ---
 
