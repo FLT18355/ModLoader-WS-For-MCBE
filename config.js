@@ -12,14 +12,14 @@ const commandPrefix = "!";
 // Mod
 const mods = {
 	client: { 
-    mcfunc: "../mod/mcfunc.js",
-    music: "../mod/music.js",
-    cmd: "../mod/cmd.js",
-    permission: "../mod/permission.js"
-    // morews: "../mod/morews.js"
+    mcfunc: "../mod/mcfunc.flt",
+    music: "../mod/music.flt",
+    cmd: "../mod/cmd.flt",
+    permission: "../mod/permission.flt"
+    // morews: "../mod/morews.flt"
   },
 	server: {
-    read: "../mod/read.js"
+    read: "../mod/read.flt"
   }
 };
 
@@ -27,4 +27,4 @@ const basePath = {
 	mcfunc: "../Function/"
 };
 
-module.exports = { track, commandPrefix, mods, basePath };
+module.exports = { track, commandPrefix, mods, basePath, wsName };

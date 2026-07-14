@@ -1,0 +1,231 @@
+const fs = require("fs");
+const path = require("path");
+const { basePath, commandPrefix } = require("../config");
+
+//MCFunction
+class MCFunc {
+	constructor(client) {
+		this.client = client;
+		this.loops = new Map();
+	}
+
+	commands() {
+		return {
+			op: [
+				{
+					name: `${commandPrefix}f:function`,
+					execute: (sender, msg) => {
+						const prefix = `${commandPrefix}f:function `;
+						if (!msg.startsWith(prefix)) return false;
+						const rest = msg.slice(prefix.length).trim();
+						if (!rest) {
+							this.client.tellAll("§c用法: !f:function <文件名> {变量}");
+							return { status: true };
+						}
+						const match = rest.match(/^(\S+)(?:\s+\{(.+)\})?$/);
+						if (match) {
+							const fileName = match[1];
+							const varValues = match[2] ? match[2].split(":").map(v => v.trim()) : [];
+							this.run(fileName, 0, null, varValues);
+						}
+						return { status: true };
+					}
+				},
+
+				{
+					name: `${commandPrefix}f:loop`,
+					execute: (sender, msg) => {
+						const prefix = `${commandPrefix}f:loop `;
+						if (!msg.startsWith(prefix)) return false;
+						const rest = msg.slice(prefix.length).trim();
+						if (!rest) {
+							this.client.tellAll("§c用法: !f:loop <文件名> {变量} <循环名> <间隔秒数>");
+							return { status: true };
+						}
+						const match = rest.match(/^(\S+)(?:\s+\{(.+)\})?\s+(\S+)\s+(\S+)$/);
+						if (match) {
+							const fileName = match[1];
+							const varValues = match[2] ? match[2].split(":").map(v => v.trim()) : [];
+							const loopName = match[3];
+							const interval = parseFloat(match[4]);
+							this.loop(fileName, loopName, interval, varValues);
+						}
+						return { status: true };
+					}
+				},
+
+				{
+					name: `${commandPrefix}f:stop`,
+					execute: (sender, msg) => {
+						if (msg === `${commandPrefix}f:stop`) {
+							this.stop();
+							return { status: true };
+						}
+						const prefix = `${commandPrefix}f:stop `;
+						if (!msg.startsWith(prefix)) return false;
+						const name = msg.slice(prefix.length).trim();
+						this.stop(name);
+						return { status: true };
+					}
+				},
+
+				{
+					name: `${commandPrefix}f:stopAll`,
+					execute: (sender, msg) => {
+						if (msg !== `${commandPrefix}f:stopAll`) return false;
+						this.stop();
+						return { status: true };
+					}
+				}
+			]
+		};
+	}
+
+	async load(fileName) {
+		try {
+			const file = await fs.promises.readFile(path.join(basePath.mcfunc, fileName), "utf-8");
+			const commands = file.split("\n");
+			return commands;
+		} catch {
+			return false;
+		}
+	}
+
+	async run(fileName, deep = 0, commands = null, varValues = []) {
+		if (!commands) {
+			commands = await this.load(fileName);
+
+			if (!commands) {
+				this.client.tellAll(`§f函数文件 §l§o"${fileName}" §c加载失败`);
+				return;
+			}
+
+			if (deep === 0) {
+				this.client.tellAll(`函数文件 §l§o"${fileName}" §r§e已运行`);
+			}
+		}
+		
+
+		if (deep >= 16) return;
+
+		let varNames = [];
+
+		for (const command of commands) {
+			if (command.startsWith("#")) continue;
+
+			const parts = command.split(";");
+			for (const part of parts) {
+				const trimmed = part.trim();
+				if (!trimmed || trimmed.startsWith("#")) continue;
+
+				if (trimmed.startsWith("function ")) {
+					await this.run(trimmed.slice("function ".length), deep + 1);
+					continue;
+				}
+
+				if (trimmed.startsWith("*sleep(")) {
+					const match = trimmed.match(/^\*sleep\((\d+(?:\.\d+)?)\)$/);
+					if (match) {
+						const seconds = parseFloat(match[1]);
+						await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+					}
+					continue;
+				}
+
+				if (trimmed.startsWith("*loop(")) {
+					const match = trimmed.match(/^\*loop\((\d+)(?::(\d+(?:\.\d+)?))?\)\[(.+)]$/);
+					if (match) {
+						const count = parseInt(match[1]);
+						const delay = match[2] ? parseFloat(match[2]) : 0;
+						const loopCmd = match[3];
+						for (let i = 0; i < count; i++) {
+							if (i > 0 && delay > 0) {
+								await new Promise(resolve => setTimeout(resolve, delay * 1000));
+							}
+							await this.client.runCommand(loopCmd);
+						}
+					}
+					continue;
+				}
+
+				if (trimmed.startsWith("*def(")) {
+					const match = trimmed.match(/^\*def\(([^)]+)\)$/);
+					if (match) {
+						varNames = match[1].split(",").map(v => v.trim());
+					}
+					continue;
+				}
+
+				let processedCommand = trimmed;
+				if (varNames.length > 0) {
+					processedCommand = processedCommand.replace(/\\\*\{([^}]+)\}/g, (match, varName) => {
+						const index = varNames.indexOf(varName);
+						if (index !== -1 && index < varValues.length) {
+							return varValues[index];
+						}
+						return match;
+					});
+				}
+
+				await this.client.runCommand(processedCommand);
+			}
+		}
+	}
+
+	async loop(fileName, loopName = null, loopInterval = null, varValues = []) {
+		if (!loopName) loopName = fileName;
+
+		const commands = await this.load(fileName);
+
+		if (!commands) {
+			this.client.tellAll(`§f函数文件 §l§o"${fileName}" §c加载失败`);
+			return;
+		}
+
+		if (this.loops.has(loopName)) {
+			this.client.tellAll(`§f循环 §l§o"${loopName}" §r§c已存在`);
+			return;
+		}
+
+		if (!loopInterval) {
+			loopInterval = 50;
+		} else {
+			loopInterval *= 1000;
+		}
+
+		this.client.tellAll(`§f循环 §l§o"${loopName}" §r§e已开启`);
+
+		this.loops.set(loopName, setInterval(async () => {
+			await this.run(fileName, 0, commands, varValues);
+		}, loopInterval));
+	}
+
+	stop(loopName = null) {
+		if (loopName === null) {
+			for (let loop of this.loops.values()) {
+				clearInterval(loop);
+			}
+
+			this.loops.clear();
+			this.client.tellAll(`§e已停止§f所有循环`);
+			return;
+		}
+
+		if (this.loops.has(loopName)) {
+			let loop = this.loops.get(loopName);
+			clearInterval(loop);
+			this.loops.delete(loopName);
+
+			this.client.tellAll(`§f循环 §l§o"${loopName}" §r§c已关闭`);
+		} else {
+			this.client.tellAll(`§f循环 §l§o"${loopName}" §r§d不存在`);
+		}
+	}
+
+	destroy() {
+		this.stop();
+		this.client = null;
+	}
+}
+
+module.exports = MCFunc;
