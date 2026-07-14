@@ -1,5 +1,8 @@
 {
-  "blocker": [],
-  "user": ["StarAwA10001"],
-  "op": ["FLT18355"]
+	"owner": "FLT18355",
+	"op": [
+		"StarAwA10001"
+	],
+	"user": [],
+	"blocker": []
 }

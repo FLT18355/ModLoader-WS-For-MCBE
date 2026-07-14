@@ -1,7 +1,8 @@
 const WebSocket = require("ws");
 const shared = require("./lib/shared");
-const { track } = require("./config");
+const { wsName, track } = require("./config");
 const Utils = require("./lib/utils");
+const Player = require("./lib/player");
 const Current = require("./lib/current")
 const { ClientModManager, ServerModManager } = require("./lib/mods");
 
@@ -21,8 +22,10 @@ server.on("connection", (ws) => {
 	ws.utils = new Utils(ws);
 	// 实例化客户端 Mod，注入当前连接
 	const clientMod = new ClientModManager(ws);
+	// 初始化 Player 记录
+	Player.init(ws);
 	// 广播连接通知
-	ws.tellAll("§bStarWS(分支) §f已连接");
+	ws.tellAll(`§a${wsName} §f已连接`);
 	ws.tellAll("§bFLT18355/ModLoader-WS-For-MCBE §f项目GitHub仓库");
 	ws.tellAll("§bStarAwA117/ModLoader-WS-For-MCBE §f源项目GitHub仓库");
 
@@ -54,6 +57,8 @@ server.on("connection", (ws) => {
 
 		// 销毁该客户端的所有 Mod 实例
 		clientMod.destroy();
+		// 清除 Player 记录
+		Player.destroyAll(ws);
 
 		// 移除所有事件监听器，防止内存泄漏
 		ws.removeAllListeners();
@@ -70,8 +75,8 @@ server.on("connection", (ws) => {
 
 // 服务端错误处理
 server.on("error", (error) => {
-		shared.logger.error("服务器错误");
-		if (track) shared.logger.debug(error.message);
+	shared.logger.error("服务器错误");
+	if (track) shared.logger.debug(error.message);
 });
 
 // 关闭函数
@@ -103,7 +108,7 @@ process.on("SIGINT", async () => {
 	if (require.main === module) {
 		// 通知所有已连接客户端并强制断开
 		server.clients.forEach((client) => {
-			client.tellAll("§cModLoader §f正关闭连接…");
+			client.tellAll(`§c${wsName} §f关闭连接`);
 			client.runCommand("/closewebsocket");
 			client.close();
 		});

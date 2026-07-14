@@ -35,14 +35,15 @@ node ws.js
 
 ## 权限系统
 
-权限数据主要存储于 `permission.json`，共四个层级：
+权限数据主要存储于 `permission.json`，共五个层级：
 
-- **Blocker** — 黑名单玩家，连接时拒绝
-- **Normal** — 普通玩家，不在 `permission.json` 定义。所有玩家默认为该权限
+- **Owner** — 拥有者，最高权限，可执行所有命令
+- **OP** — 管理员，可执行 `op`、`user` 和 `normal` 级别命令
 - **User** — 普通注册用户，可执行 `user` 和 `normal` 级别命令
-- **OP** — 管理员，可执行所有命令
+- **Normal** — 普通玩家，不在 `permission.json` 定义。所有玩家默认为该权限
+- **Blocker** — 黑名单玩家，连接时拒绝
 
-权限大小排序：`OP > User > Normal > Blocker`
+权限大小排序：`Owner > OP > User > Normal > Blocker`
 
 ## Mod 机制
 
@@ -57,7 +58,17 @@ mods: {
 }
 ```
 
-导出对象需包含 构造函数、`commands` 方法（返回 `Command` 实例数组）、`destroy` 方法。
+导出对象需包含 构造函数、`commands` 方法（返回按权限等级分类的命令映射表）、`destroy` 方法。
+
+```js
+// commands() 返回格式示例
+{
+  normal: [...],  // 所有用户可用（不含 Blocker）
+  user: [...],    // User 以上权限可用
+  op: [...],      // OP 以上权限可用
+  owner: [...]    // 仅 Owner 权限可用
+}
+```
 
 ### 服务端 Mod
 
@@ -85,6 +96,7 @@ ModLoader-WS-For-MCBE/
 │   ├── logger.js      日志（控制台 + 文件）
 │   ├── mods.js        Mod 管理器
 │   ├── permission.js  权限读写与查询
+│   ├── player.js      玩家管理类
 │   ├── shared.js      共享日志实例
 │   └── utils.js       WebSocket 工具类（协议封装）
 └── mod/               Mod 存放目录
@@ -159,7 +171,6 @@ const utils = new Utils(ws);
 |---|---|---|
 | `runCommand` | `(command: string, callback?: Function) => boolean` | 执行游戏命令。命令字节长度 >= 462 时返回 `false`（游戏限制，超出会导致客户端断开连接）。可选 `callback` 在收到命令响应时被调用 |
 | `subscribe` | `(event: string, callback?: Function) => boolean` | 订阅游戏事件，同一事件可订阅多次。回调签名为 `(data) => {}`，`data.body` 包含事件数据 |
-| `unsubscribe` | `(event: string) => boolean` | 取消订阅指定事件，清除该事件的所有回调 |
 | `tellAll` | `(msg: string) => void` | 向所有玩家广播消息（通过 `/me` 命令），消息按 420 字节自动分割 |
 | `tell` | `(msg: string, target?: string, isPrefix?: boolean) => void` | 向指定目标发送 `tellraw` 消息。`target` 默认 `"@a"`；`isPrefix` 默认 `true`，添加 `* 外部` 前缀。消息按 300 字节自动分割 |
 
@@ -217,7 +228,7 @@ if (Current.has("loop")) clearInterval(Current.get("loop"));
 const PermissionManager = require("../lib/permission");
 
 const level = await PermissionManager.query("Steve");
-// "Blocker" | "User" | "OP" | "Normal"
+// -1 (Blocker) | 0 (Normal) | 1 (User) | 2 (OP) | 3 (Owner)
 
 await PermissionManager.add("user", "Notch");
 await PermissionManager.remove("op", "Notch");
@@ -229,7 +240,7 @@ await PermissionManager.remove("op", "Notch");
 | `set(newPer)` | `object` | `Promise<true \| Error>` | 写入完整权限配置 |
 | `add(object, value)` | `string, string` | `Promise<true \| Error>` | 向指定权限组添加成员，已存在则直接返回 `true` |
 | `remove(object, value)` | `string, string` | `Promise<true \| Error>` | 从指定权限组移除成员 |
-| `query(queried)` | `string` | `Promise<string \| Error>` | 查询成员权限等级，按 OP > Blocker > User > Normal 优先级匹配 |
+| `query(queried)` | `string` | `Promise<number \| Error>` | 查询成员权限等级，返回 `-1`(Blocker)、`0`(Normal)、`1`(User)、`2`(OP)、`3`(Owner)，按 Owner > Blocker > OP > User > Normal 优先级匹配 |
 
 ---
 

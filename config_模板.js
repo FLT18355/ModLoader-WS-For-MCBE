@@ -1,5 +1,8 @@
 // 配置文档
 // 系统配置
+// 服务端名称
+const wsName = "ModLoader";
+
 // 调试开关 - 开启后输出详细调试日志
 const track = false;
 
@@ -27,4 +30,9 @@ const mods = {
 };
 */
 
-module.exports = { track, commandPrefix, mods };
+module.exports = {
+	wsName,
+	track,
+	commandPrefix,
+	mods
+};

@@ -1,7 +1,12 @@
 // 配置文档
 // 系统配置
 // 调试
+
 const track = false;
+
+// 服务端名称
+const wsName = "FLTLoader";
+
 // 命令
 const commandPrefix = "!";
 // Mod
