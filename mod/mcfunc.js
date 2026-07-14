@@ -71,12 +71,27 @@ class MCFunc {
 		for (const command of commands) {
 			if (command.startsWith("#")) continue;
 
-			if (command.startsWith("function ")) {
-				await this.run(command.slice("function ".length), deep + 1);
-				continue;
-			}
+			const parts = command.split(";");
+			for (const part of parts) {
+				const trimmed = part.trim();
+				if (!trimmed || trimmed.startsWith("#")) continue;
 
-			await this.client.runCommand(command);
+				if (trimmed.startsWith("function ")) {
+					await this.run(trimmed.slice("function ".length), deep + 1);
+					continue;
+				}
+
+				if (trimmed.startsWith("*sleep(")) {
+					const match = trimmed.match(/^\*sleep\((\d+(?:\.\d+)?)\)$/);
+					if (match) {
+						const seconds = parseFloat(match[1]);
+						await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+					}
+					continue;
+				}
+
+				await this.client.runCommand(trimmed);
+			}
 		}
 	}
 

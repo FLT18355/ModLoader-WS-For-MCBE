@@ -10,11 +10,12 @@ const mods = {
     mcfunc: "../mod/mcfunc.js",
     music: "../mod/music.js",
     cmd: "../mod/cmd.js",
-    permission: "../mod/permission.js",
-    read: "../mod/read.js"
+    permission: "../mod/permission.js"
     // morews: "../mod/morews.js"
   },
-	server: {}
+	server: {
+    read: "../mod/read.js"
+  }
 };
 
 const basePath = {
