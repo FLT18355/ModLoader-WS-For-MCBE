@@ -30,4 +30,4 @@ const basePath = {
 	mcfunc: "../Function/"
 };
 
-module.exports = { track, commandPrefix, mods, basePath, wsName };
+module.exports = { track, commandPrefix, mods, basePath, wsConfig };
