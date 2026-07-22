@@ -1,14 +1,14 @@
 const WebSocket = require("ws");
-const shared = require("./lib/shared");
-const { wsName, track } = require("./config");
-const Utils = require("./lib/utils");
-const Player = require("./lib/player");
-const Current = require("./lib/current")
-const { ClientModManager, ServerModManager } = require("./lib/mods");
+const shared = require("./lib/shared.js");
+const { wsConfig, track } = require("./config.js");
+const Utils = require("./lib/utils.js");
+const Player = require("./lib/player.js");
+const Current = require("./lib/current.js");
+const { ClientModManager, ServerModManager } = require("./lib/mods.js");
 
-// 创建 WebSocket 服务端，监听端口 19132
+// 创建 WebSocket 服务端，监听端口 wsConfig.port
 const server = new WebSocket.Server({
-	port: 19132
+	port: wsConfig.port
 });
 
 // 加载服务端 Mod 和客户端 Mod 的静态定义
@@ -25,7 +25,7 @@ server.on("connection", (ws) => {
 	// 初始化 Player 记录
 	Player.init(ws);
 	// 广播连接通知
-	ws.tellAll(`§a${wsName} §f已连接`);
+	ws.tellAll(`§a${wsConfig.name} §f已连接`);
 	ws.tellAll("§bFLT18355/ModLoader-WS-For-MCBE §f项目GitHub仓库");
 	ws.tellAll("§bStarAwA117/ModLoader-WS-For-MCBE §f源项目GitHub仓库");
 
@@ -108,7 +108,7 @@ process.on("SIGINT", async () => {
 	if (require.main === module) {
 		// 通知所有已连接客户端并强制断开
 		server.clients.forEach((client) => {
-			client.tellAll(`§c${wsName} §f关闭连接`);
+			client.tellAll(`§c${wsConfig.name} §f关闭连接`);
 			client.runCommand("/closewebsocket");
 			client.close();
 		});

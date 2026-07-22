@@ -4,8 +4,11 @@
 
 const track = false;
 
-// 服务端名称
-const wsName = "FLTLoader";
+// 服务端配置
+const wsConfig = {
+	name: "FLT - ModLoader",
+	port: 8080
+};
 
 // 命令
 const commandPrefix = "!";

@@ -1,5 +1,5 @@
-const PermissionManager = require("../lib/permission");
-const Command = require("../lib/command");
+const PermissionManager = require("../lib/permission.js");
+const Command = require("../lib/command.js");
 
 // 权限管理命令类
 // 提供游戏内权限查询、添加、删除的命令接口
@@ -29,8 +29,8 @@ class PermissionCommands {
 				})
 			],
 
-			// 管理员命令：权限增删
-			op: [
+			// Owner 命令：权限增删
+			owner: [
 				Command.create("p:add", "权限 - 添加权限")
 				.addString("类型")
 				.addString("账号")
