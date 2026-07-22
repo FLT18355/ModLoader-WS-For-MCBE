@@ -76,7 +76,7 @@ class MusicPlayer {
 			}
 
 			try {
-				this.client.runCommand(
+				this.client.sendCommand(
 					`/execute as @a at @s run playsound ${musicTimbre} @s ~ ~ ~ ${musicPitch} ${musicVolume}`
 				);
 			} catch (e) {

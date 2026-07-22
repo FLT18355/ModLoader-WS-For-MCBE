@@ -65,7 +65,8 @@ class Cmd {
 	}
 
 	listPlayers(sender) {
-		this.client.runCommand("list", (data) => {
+		this.client.runCommand("list")
+		.then(data => {
 			const body = data?.body;
 			if (body?.statusMessage) {
 				const lines = body.statusMessage.split("\n");

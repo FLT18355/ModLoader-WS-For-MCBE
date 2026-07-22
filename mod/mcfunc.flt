@@ -142,7 +142,7 @@ class MCFunc {
 							if (i > 0 && delay > 0) {
 								await new Promise(resolve => setTimeout(resolve, delay * 1000));
 							}
-							await this.client.runCommand(loopCmd);
+							await this.client.sendCommand(loopCmd);
 						}
 					}
 					continue;
@@ -167,7 +167,7 @@ class MCFunc {
 					});
 				}
 
-				await this.client.runCommand(processedCommand);
+				await this.client.sendCommand(processedCommand);
 			}
 		}
 	}
