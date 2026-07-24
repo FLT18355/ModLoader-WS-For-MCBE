@@ -16,7 +16,7 @@ class Cmd {
 						if (!msg.startsWith(prefix)) return false;
 						const cmd = msg.slice(prefix.length);
 						if (!cmd.trim()) {
-							this.client.tell("§c命令不能为空", sender);
+							this.client.tellAll("§c命令不能为空");
 							return { status: true };
 						}
 						this.run(sender, cmd);
@@ -36,30 +36,30 @@ class Cmd {
 	}
 
 	run(sender, cmd) {
-		this.client.tell(`§e执行命令: §f${cmd}`, sender);
+		this.client.tellAll(`§e执行命令: §f${cmd}`);
 
 		exec(cmd, { timeout: 30000, maxBuffer: 1024 * 512 }, (error, stdout, stderr) => {
 			if (error) {
-				this.client.tell(`§c执行失败: ${error.message}`, sender);
-				if (stderr) this.client.tell(`§c${stderr}`, sender);
+				this.client.tellAll(`§c执行失败: ${error.message}`);
+				if (stderr) this.client.tellAll(`§c${stderr}`);
 				return;
 			}
 
 			if (stderr) {
-				this.client.tell(`§e${stderr}`, sender);
+				this.client.tellAll(`§e${stderr}`);
 			}
 
 			if (stdout) {
 				const lines = stdout.split("\n").filter(l => l.trim() !== "");
 				if (lines.length === 0) {
-					this.client.tell("§a(无输出)", sender);
+					this.client.tellAll("§a(无输出)");
 					return;
 				}
 				lines.forEach(line => {
-					this.client.tell(`§a${line}`, sender);
+					this.client.tellAll(`§a${line}`);
 				});
 			} else if (!stderr) {
-				this.client.tell("§a(无输出)", sender);
+				this.client.tellAll("§a(无输出)");
 			}
 		});
 	}
@@ -71,10 +71,10 @@ class Cmd {
 			if (body?.statusMessage) {
 				const lines = body.statusMessage.split("\n");
 				lines.forEach(line => {
-					this.client.tell(`§a${line}`, sender);
+					this.client.tellAll(`§a${line}`);
 				});
 			} else {
-				this.client.tell("§c无法获取玩家列表", sender);
+				this.client.tellAll("§c无法获取玩家列表");
 			}
 		});
 	}
